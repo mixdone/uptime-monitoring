@@ -1,0 +1,14 @@
+db:
+  host: "db"
+  port: "5432"
+  user: "postgres"
+  dbname: "demo"
+  sslmode: "disable"
+
+log:
+  level: "debug"
+  format: "json" 
+
+server:
+  host: "localhost"
+  port: 8080
