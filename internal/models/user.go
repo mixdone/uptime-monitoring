@@ -11,7 +11,7 @@ type User struct {
 }
 
 type Session struct {
-	ID           int       `json:"id" db:"id"`
+	ID           int64     `json:"id" db:"id"`
 	UserID       int       `json:"user_id" db:"user_id"`
 	RefreshToken string    `json:"refresh_token" db:"refresh_token"`
 	ExpiresAt    time.Time `json:"-" db:"expires_at"`

@@ -2,10 +2,12 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
+	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mixdone/uptime-monitoring/internal/models"
+	"github.com/mixdone/uptime-monitoring/internal/models/errs"
 )
 
 type UserRepo struct {
@@ -50,6 +52,9 @@ func (u *UserRepo) GetUser(ctx context.Context, userId int) (*models.User, error
 	)
 
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errs.ErrUserNotFound
+		}
 		return nil, err
 	}
 
@@ -72,6 +77,9 @@ func (u *UserRepo) GetUserByUsername(ctx context.Context, username string) (*mod
 	)
 
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errs.ErrUserNotFound
+		}
 		return nil, err
 	}
 
@@ -91,7 +99,7 @@ func (u *UserRepo) DeleteUser(ctx context.Context, userId int) error {
 	}
 
 	if cmdTag.RowsAffected() == 0 {
-		return fmt.Errorf("user not found %v", userId)
+		return errs.ErrUserNotFound
 	}
 
 	return nil

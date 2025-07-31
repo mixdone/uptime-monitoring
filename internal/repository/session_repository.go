@@ -8,17 +8,18 @@ import (
 	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mixdone/uptime-monitoring/internal/models"
+	"github.com/mixdone/uptime-monitoring/internal/models/errs"
 )
 
-type SessionRepo struct {
+type sessionRepository struct {
 	db *pgxpool.Pool
 }
 
-func NewSessionRepo(pool *pgxpool.Pool) *SessionRepo {
-	return &SessionRepo{db: pool}
+func NewSessionRepo(pool *pgxpool.Pool) SessionRepository {
+	return &sessionRepository{db: pool}
 }
 
-func (s *SessionRepo) CreateSession(ctx context.Context, session models.Session) (int64, error) {
+func (s *sessionRepository) CreateSession(ctx context.Context, session models.Session) (int64, error) {
 	var id int64
 	query := `
 		INSERT INTO sessions (user_id, refresh_token, expires_at, fingerprint)
@@ -35,7 +36,7 @@ func (s *SessionRepo) CreateSession(ctx context.Context, session models.Session)
 	return id, nil
 }
 
-func (s *SessionRepo) GetSession(ctx context.Context, userID int, refreshToken, fingerprint string) (*models.Session, error) {
+func (s *sessionRepository) GetSession(ctx context.Context, userID int, refreshToken, fingerprint string) (*models.Session, error) {
 	var session models.Session
 
 	query := `
@@ -52,7 +53,7 @@ func (s *SessionRepo) GetSession(ctx context.Context, userID int, refreshToken, 
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
+		return nil, errs.ErrSessionNotFound
 	}
 
 	if err != nil {
@@ -62,7 +63,7 @@ func (s *SessionRepo) GetSession(ctx context.Context, userID int, refreshToken, 
 	return &session, nil
 }
 
-func (s *SessionRepo) GetAllUserSessions(ctx context.Context, userID int) ([]models.Session, error) {
+func (s *sessionRepository) GetAllUserSessions(ctx context.Context, userID int) ([]models.Session, error) {
 	var sessions []models.Session
 
 	query := `
@@ -99,7 +100,7 @@ func (s *SessionRepo) GetAllUserSessions(ctx context.Context, userID int) ([]mod
 	return sessions, nil
 }
 
-func (s *SessionRepo) DeleteSession(ctx context.Context, sessionID int64) error {
+func (s *sessionRepository) DeleteSession(ctx context.Context, sessionID int64) error {
 	query := `
 		DELETE FROM sessions 
 		WHERE id = $1
@@ -109,7 +110,7 @@ func (s *SessionRepo) DeleteSession(ctx context.Context, sessionID int64) error 
 	return err
 }
 
-func (s *SessionRepo) DeleteAllSessions(ctx context.Context, userID int) error {
+func (s *sessionRepository) DeleteAllSessions(ctx context.Context, userID int) error {
 	query := `
 		DELETE FROM sessions 
 		WHERE user_id = $1

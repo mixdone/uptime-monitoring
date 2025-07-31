@@ -1,10 +1,11 @@
-package auth
+package token
 
 import (
 	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/mixdone/uptime-monitoring/internal/services"
 )
 
 type tokenService struct {
@@ -19,7 +20,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func NewTokenService(accessSecret, refreshSecret string, accessTTL, refreshTTL time.Duration) TokenService {
+func NewTokenService(accessSecret, refreshSecret string, accessTTL, refreshTTL time.Duration) services.TokenService {
 	return &tokenService{
 		accessSecret:  []byte(accessSecret),
 		refreshSecret: []byte(refreshSecret),

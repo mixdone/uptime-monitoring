@@ -1,13 +1,15 @@
-package auth
+package session
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/mixdone/uptime-monitoring/internal/models"
+	"github.com/mixdone/uptime-monitoring/internal/models/errs"
 	"github.com/mixdone/uptime-monitoring/internal/repository"
+	"github.com/mixdone/uptime-monitoring/internal/services"
 	"github.com/mixdone/uptime-monitoring/pkg/logger"
-	"github.com/sirupsen/logrus"
 )
 
 type sessionService struct {
@@ -15,7 +17,7 @@ type sessionService struct {
 	logger logger.Logger
 }
 
-func NewSessionServices(repo repository.SessionRepository, log logger.Logger) SessionService {
+func NewSessionService(repo repository.SessionRepository, log logger.Logger) services.SessionService {
 	return &sessionService{
 		repo:   repo,
 		logger: log.WithField("component", "sessionService"),
@@ -41,7 +43,7 @@ func (s *sessionService) CreateSession(ctx context.Context, userID int,
 		return 0, err
 	}
 
-	s.logger.WithFields(logrus.Fields{
+	s.logger.WithFields(map[string]any{
 		"user_id":     userID,
 		"session":     id,
 		"fingerprint": fingerprint,
@@ -55,15 +57,21 @@ func (s *sessionService) GetSession(ctx context.Context, userID int,
 
 	session, err := s.repo.GetSession(ctx, userID, refreshToken, fingerprint)
 
-	if err != nil {
-		s.logger.WithFields(logrus.Fields{
+	if errors.Is(err, errs.ErrSessionNotFound) {
+		s.logger.WithFields(map[string]any{
 			"user_id":     userID,
 			"fingerprint": fingerprint,
-		}).WithError(err).Error("Session not found")
+		}).WithError(err).Info("Session not found")
+		return nil, err
+	} else if err != nil {
+		s.logger.WithFields(map[string]any{
+			"user_id":     userID,
+			"fingerprint": fingerprint,
+		}).WithError(err).Error("Repository error")
 		return nil, err
 	}
 
-	s.logger.WithFields(logrus.Fields{
+	s.logger.WithFields(map[string]any{
 		"user_id":     userID,
 		"session":     session.ID,
 		"fingerprint": fingerprint,

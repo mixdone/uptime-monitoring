@@ -1,23 +1,96 @@
-package auth
+package services
 
 import (
 	"context"
+	"errors"
 	"time"
 
-	"github.com/mixdone/uptime-monitoring/internal/models"
+	"github.com/mixdone/uptime-monitoring/internal/models/dto"
+	"github.com/mixdone/uptime-monitoring/internal/models/errs"
+	"github.com/mixdone/uptime-monitoring/internal/services"
+	"github.com/mixdone/uptime-monitoring/pkg/logger"
 )
 
-type TokenService interface {
-	Generate(userID int) (accessToken, refreshToken string, err error)
-	ValidateAccess(tokenStr string) (userID int, err error)
-	ValidateRefresh(tokenStr string) (userID int, err error)
+const refreshTokenTTL = 7 * 24 * time.Hour
+
+type authService struct {
+	logger  logger.Logger
+	user    services.UserService
+	session services.SessionService
+	token   services.TokenService
 }
 
-type SessionService interface {
-	CreateSession(ctx context.Context, userID int,
-		refreshToken, fingerprint string, expiresAt time.Time) (int64, error)
-	GetSession(ctx context.Context, userID int,
-		refreshToken, fingerprint string) (*models.Session, error)
-	DeleteSession(ctx context.Context, sessionID int64) error
-	DeleteAllUserSessions(ctx context.Context, userID int) error
+func NewAuthService(user services.UserService, session services.SessionService, token services.TokenService, log logger.Logger) services.AuthenticationService {
+	return &authService{
+		logger:  log,
+		user:    user,
+		session: session,
+		token:   token,
+	}
+}
+
+func (a *authService) Register(ctx context.Context, username, password, fingerprint string) (*dto.AuthResult, error) {
+	id, err := a.user.RegisterUser(ctx, username, password)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.createAuthResult(ctx, id, fingerprint)
+
+}
+
+func (a *authService) Login(ctx context.Context, username, password, fingerprint string) (*dto.AuthResult, error) {
+	user, err := a.user.GetByUsername(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+
+	if !a.user.VerifyPassword(user.PasswordHash, password) {
+		return nil, errors.New("wrong password")
+	}
+
+	return a.createAuthResult(ctx, user.ID, fingerprint)
+}
+
+func (a *authService) Logout(ctx context.Context, userID int, refreshToken, fingerprint string) error {
+	session, err := a.session.GetSession(ctx, userID, refreshToken, fingerprint)
+	if errors.Is(err, errs.ErrSessionNotFound) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	if err = a.session.DeleteSession(ctx, session.ID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *authService) RefreshTokens(ctx context.Context, userID int, refreshToken, fingerprint string) (*dto.AuthResult, error) {
+
+	err := a.Logout(ctx, userID, refreshToken, fingerprint)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.createAuthResult(ctx, userID, fingerprint)
+}
+
+func (a *authService) createAuthResult(ctx context.Context, userID int, fingerprint string) (*dto.AuthResult, error) {
+	accessToken, refreshToken, err := a.token.Generate(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	expireAt := time.Now().Add(refreshTokenTTL)
+	_, err = a.session.CreateSession(ctx, userID, refreshToken, fingerprint, expireAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.AuthResult{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -26,6 +27,11 @@ type Config struct {
 		Host string `mapstructure:"host"`
 		Port int    `mapstructure:"port"`
 	} `mapstructure:"server"`
+
+	Jwt struct {
+		AccessSecret  string
+		RefreshSecret string
+	}
 }
 
 func LoadConfig() (*Config, error) {
@@ -54,7 +60,17 @@ func LoadConfig() (*Config, error) {
 
 	cfg.DB.Password = viper.GetString("db.password")
 	if cfg.DB.Password == "" {
-		return nil, fmt.Errorf("password not set in UPTIME_DB_PASSOWRD")
+		return nil, errors.New("password not set in UPTIME_DB_PASSWORD")
+	}
+
+	cfg.Jwt.AccessSecret = viper.GetString("jwt.accesssecret")
+	if cfg.Jwt.AccessSecret == "" {
+		return nil, errors.New("password not set in UPTIME_JWT_ACCESSSECRET")
+	}
+
+	cfg.Jwt.RefreshSecret = viper.GetString("jwt.refreshsecret")
+	if cfg.Jwt.RefreshSecret == "" {
+		return nil, errors.New("password not set in UPTIME_JWT_REFRESHSECRET")
 	}
 
 	return &cfg, nil

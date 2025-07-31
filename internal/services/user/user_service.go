@@ -1,21 +1,23 @@
-package services
+package user
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/mixdone/uptime-monitoring/internal/models"
+	"github.com/mixdone/uptime-monitoring/internal/models/errs"
 	"github.com/mixdone/uptime-monitoring/internal/repository"
-	"github.com/sirupsen/logrus"
+	"github.com/mixdone/uptime-monitoring/internal/services"
+	"github.com/mixdone/uptime-monitoring/pkg/logger"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type userService struct {
 	repo   repository.UserRepository
-	logger *logrus.Entry
+	logger logger.Logger
 }
 
-func NewUserService(repo repository.UserRepository, log *logrus.Logger) UserService {
+func NewUserService(repo repository.UserRepository, log logger.Logger) services.UserService {
 	return &userService{
 		repo:   repo,
 		logger: log.WithField("component", "userService"),
@@ -27,10 +29,9 @@ func (s *userService) GetByUsername(ctx context.Context, username string) (*mode
 
 	user, err := s.repo.GetUserByUsername(ctx, username)
 	if err != nil {
-		s.logger.WithFields(map[string]any{
-			"username": username,
-			"error":    err.Error(),
-		}).Error("Failed to get user by username")
+		s.logger.WithField("username", username).
+			WithError(err).
+			Error("Failed to get user by username")
 		return nil, err
 	}
 
@@ -42,10 +43,9 @@ func (s *userService) GetByID(ctx context.Context, userID int) (*models.User, er
 
 	user, err := s.repo.GetUser(ctx, userID)
 	if err != nil {
-		s.logger.WithFields(map[string]any{
-			"userID": userID,
-			"error":  err.Error(),
-		}).Error("Failed to get user by ID")
+		s.logger.WithField("userID", userID).
+			WithError(err).
+			Error("Failed to get user by ID")
 		return nil, err
 	}
 
@@ -55,19 +55,23 @@ func (s *userService) GetByID(ctx context.Context, userID int) (*models.User, er
 func (s *userService) RegisterUser(ctx context.Context, username, password string) (int, error) {
 	s.logger.Infof("Attempting to register user: %s", username)
 
-	existing, err := s.repo.GetUserByUsername(ctx, username)
-	if err == nil && existing != nil {
+	_, err := s.repo.GetUserByUsername(ctx, username)
+	if err == nil {
 		s.logger.Warnf("Username already taken: %s", username)
-		return 0, fmt.Errorf("username already taken")
+		return 0, errs.ErrUsernameTaken
+	}
+
+	if !errors.Is(err, errs.ErrUserNotFound) {
+		s.logger.WithError(err).Error("Unexpected error while checking username")
+		return 0, errs.ErrInternal
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		s.logger.WithFields(map[string]any{
-			"username": username,
-			"error":    err.Error(),
-		}).Error("Failed to hash password")
-		return 0, fmt.Errorf("internal error")
+		s.logger.WithField("username", username).
+			WithError(err).
+			Error("Failed to hash password")
+		return 0, errs.ErrHashingFailed
 	}
 
 	user := models.User{
@@ -77,10 +81,9 @@ func (s *userService) RegisterUser(ctx context.Context, username, password strin
 
 	id, err := s.repo.CreateUser(ctx, user)
 	if err != nil {
-		s.logger.WithFields(map[string]any{
-			"username": username,
-			"error":    err.Error(),
-		}).Error("Failed to create user in DB")
+		s.logger.WithField("username", username).
+			WithError(err).
+			Error("Failed to create user in DB")
 		return 0, err
 	}
 
@@ -101,10 +104,9 @@ func (s *userService) DeleteUser(ctx context.Context, userID int) error {
 	s.logger.Infof("Deleting user: id=%d", userID)
 
 	if err := s.repo.DeleteUser(ctx, userID); err != nil {
-		s.logger.WithFields(map[string]any{
-			"userID": userID,
-			"error":  err.Error(),
-		}).Error("Failed to delete user")
+		s.logger.WithField("userID", userID).
+			WithError(err).
+			Error("Failed to delete user")
 		return err
 	}
 
