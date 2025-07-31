@@ -7,7 +7,6 @@ import (
 	"github.com/mixdone/uptime-monitoring/internal/models"
 	"github.com/mixdone/uptime-monitoring/internal/models/errs"
 	"github.com/mixdone/uptime-monitoring/internal/repository"
-	"github.com/mixdone/uptime-monitoring/internal/services"
 	"github.com/mixdone/uptime-monitoring/pkg/logger"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,7 +16,7 @@ type userService struct {
 	logger logger.Logger
 }
 
-func NewUserService(repo repository.UserRepository, log logger.Logger) services.UserService {
+func NewUserService(repo repository.UserRepository, log logger.Logger) *userService {
 	return &userService{
 		repo:   repo,
 		logger: log.WithField("component", "userService"),

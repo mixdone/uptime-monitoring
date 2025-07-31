@@ -10,15 +10,15 @@ import (
 	"github.com/mixdone/uptime-monitoring/internal/models/errs"
 )
 
-type UserRepo struct {
+type userRepo struct {
 	db *pgxpool.Pool
 }
 
-func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
-	return &UserRepo{db: pool}
+func NewUserRepo(pool *pgxpool.Pool) UserRepository {
+	return &userRepo{db: pool}
 }
 
-func (u *UserRepo) CreateUser(ctx context.Context, user models.User) (int, error) {
+func (u *userRepo) CreateUser(ctx context.Context, user models.User) (int, error) {
 	var id int
 	query := `
 		INSERT INTO users (username, email, telegram_id, password_hash)
@@ -36,7 +36,7 @@ func (u *UserRepo) CreateUser(ctx context.Context, user models.User) (int, error
 	return id, nil
 }
 
-func (u *UserRepo) GetUser(ctx context.Context, userId int) (*models.User, error) {
+func (u *userRepo) GetUser(ctx context.Context, userId int) (*models.User, error) {
 	var user models.User
 	query := `
 		SELECT id, username, email, telegram_id, password_hash 
@@ -61,7 +61,7 @@ func (u *UserRepo) GetUser(ctx context.Context, userId int) (*models.User, error
 	return &user, nil
 }
 
-func (u *UserRepo) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+func (u *userRepo) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	var user models.User
 	query := `
 			SELECT id, username, email, telegram_id, password_hash
@@ -86,7 +86,7 @@ func (u *UserRepo) GetUserByUsername(ctx context.Context, username string) (*mod
 	return &user, nil
 }
 
-func (u *UserRepo) DeleteUser(ctx context.Context, userId int) error {
+func (u *userRepo) DeleteUser(ctx context.Context, userId int) error {
 	query := `
 		DELETE FROM users 
 		WHERE id = $1 

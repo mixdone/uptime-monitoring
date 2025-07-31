@@ -8,7 +8,7 @@ import (
 	"github.com/mixdone/uptime-monitoring/internal/models"
 	"github.com/mixdone/uptime-monitoring/internal/models/errs"
 	"github.com/mixdone/uptime-monitoring/internal/repository"
-	"github.com/mixdone/uptime-monitoring/internal/services"
+	"github.com/mixdone/uptime-monitoring/internal/services/interfaces"
 	"github.com/mixdone/uptime-monitoring/pkg/logger"
 )
 
@@ -17,7 +17,7 @@ type sessionService struct {
 	logger logger.Logger
 }
 
-func NewSessionService(repo repository.SessionRepository, log logger.Logger) services.SessionService {
+func NewSessionService(repo repository.SessionRepository, log logger.Logger) interfaces.SessionService {
 	return &sessionService{
 		repo:   repo,
 		logger: log.WithField("component", "sessionService"),

@@ -1,4 +1,4 @@
-package services
+package auth
 
 import (
 	"context"
@@ -7,20 +7,19 @@ import (
 
 	"github.com/mixdone/uptime-monitoring/internal/models/dto"
 	"github.com/mixdone/uptime-monitoring/internal/models/errs"
-	"github.com/mixdone/uptime-monitoring/internal/services"
+	"github.com/mixdone/uptime-monitoring/internal/services/constants"
+	"github.com/mixdone/uptime-monitoring/internal/services/interfaces"
 	"github.com/mixdone/uptime-monitoring/pkg/logger"
 )
 
-const refreshTokenTTL = 7 * 24 * time.Hour
-
 type authService struct {
 	logger  logger.Logger
-	user    services.UserService
-	session services.SessionService
-	token   services.TokenService
+	user    interfaces.UserService
+	session interfaces.SessionService
+	token   interfaces.TokenService
 }
 
-func NewAuthService(user services.UserService, session services.SessionService, token services.TokenService, log logger.Logger) services.AuthenticationService {
+func NewAuthService(user interfaces.UserService, session interfaces.SessionService, token interfaces.TokenService, log logger.Logger) interfaces.AuthenticationService {
 	return &authService{
 		logger:  log,
 		user:    user,
@@ -83,7 +82,7 @@ func (a *authService) createAuthResult(ctx context.Context, userID int, fingerpr
 		return nil, err
 	}
 
-	expireAt := time.Now().Add(refreshTokenTTL)
+	expireAt := time.Now().Add(constants.RefreshTokenTTL)
 	_, err = a.session.CreateSession(ctx, userID, refreshToken, fingerprint, expireAt)
 	if err != nil {
 		return nil, err
