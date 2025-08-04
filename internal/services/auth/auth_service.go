@@ -28,31 +28,31 @@ func NewAuthService(user interfaces.UserService, session interfaces.SessionServi
 	}
 }
 
-func (a *authService) Register(ctx context.Context, username, password, fingerprint string) (*dto.AuthResult, error) {
-	id, err := a.user.RegisterUser(ctx, username, password)
+func (a *authService) Register(ctx context.Context, userDTO dto.RegisterRequest) (*dto.AuthResult, error) {
+	id, err := a.user.RegisterUser(ctx, userDTO)
 	if err != nil {
 		return nil, err
 	}
 
-	return a.createAuthResult(ctx, id, fingerprint)
+	return a.createAuthResult(ctx, id, userDTO.Fingerprint)
 
 }
 
-func (a *authService) Login(ctx context.Context, username, password, fingerprint string) (*dto.AuthResult, error) {
-	user, err := a.user.GetByUsername(ctx, username)
+func (a *authService) Login(ctx context.Context, userDTO dto.LoginRequest) (*dto.AuthResult, error) {
+	user, err := a.user.GetByUsername(ctx, userDTO.Username)
 	if err != nil {
 		return nil, err
 	}
 
-	if !a.user.VerifyPassword(user.PasswordHash, password) {
+	if !a.user.VerifyPassword(user.PasswordHash, userDTO.Password) {
 		return nil, errors.New("wrong password")
 	}
 
-	return a.createAuthResult(ctx, user.ID, fingerprint)
+	return a.createAuthResult(ctx, user.ID, userDTO.Fingerprint)
 }
 
-func (a *authService) Logout(ctx context.Context, userID int, refreshToken, fingerprint string) error {
-	session, err := a.session.GetSession(ctx, userID, refreshToken, fingerprint)
+func (a *authService) Logout(ctx context.Context, userID int64, userDTO dto.LogoutRequest) error {
+	session, err := a.session.GetSession(ctx, userID, userDTO.RefreshToken, userDTO.Fingerprint)
 	if errors.Is(err, errs.ErrSessionNotFound) {
 		return nil
 	} else if err != nil {
@@ -66,17 +66,17 @@ func (a *authService) Logout(ctx context.Context, userID int, refreshToken, fing
 	return nil
 }
 
-func (a *authService) RefreshTokens(ctx context.Context, userID int, refreshToken, fingerprint string) (*dto.AuthResult, error) {
+func (a *authService) RefreshTokens(ctx context.Context, userID int64, userDTO dto.RefreshRequest) (*dto.AuthResult, error) {
 
-	err := a.Logout(ctx, userID, refreshToken, fingerprint)
+	err := a.Logout(ctx, userID, dto.LogoutRequest(userDTO))
 	if err != nil {
 		return nil, err
 	}
 
-	return a.createAuthResult(ctx, userID, fingerprint)
+	return a.createAuthResult(ctx, userID, userDTO.Fingerprint)
 }
 
-func (a *authService) createAuthResult(ctx context.Context, userID int, fingerprint string) (*dto.AuthResult, error) {
+func (a *authService) createAuthResult(ctx context.Context, userID int64, fingerprint string) (*dto.AuthResult, error) {
 	accessToken, refreshToken, err := a.token.Generate(userID)
 	if err != nil {
 		return nil, err

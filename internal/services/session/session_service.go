@@ -24,7 +24,7 @@ func NewSessionService(repo repository.SessionRepository, log logger.Logger) int
 	}
 }
 
-func (s *sessionService) CreateSession(ctx context.Context, userID int,
+func (s *sessionService) CreateSession(ctx context.Context, userID int64,
 	refreshToken, fingerprint string,
 	expiresAt time.Time) (int64, error) {
 	session := models.Session{
@@ -52,7 +52,7 @@ func (s *sessionService) CreateSession(ctx context.Context, userID int,
 	return id, nil
 }
 
-func (s *sessionService) GetSession(ctx context.Context, userID int,
+func (s *sessionService) GetSession(ctx context.Context, userID int64,
 	refreshToken, fingerprint string) (*models.Session, error) {
 
 	session, err := s.repo.GetSession(ctx, userID, refreshToken, fingerprint)
@@ -93,7 +93,7 @@ func (s *sessionService) DeleteSession(ctx context.Context, sessionID int64) err
 	return nil
 }
 
-func (s *sessionService) DeleteAllUserSessions(ctx context.Context, userID int) error {
+func (s *sessionService) DeleteAllUserSessions(ctx context.Context, userID int64) error {
 	err := s.repo.DeleteAllSessions(ctx, userID)
 	if err != nil {
 		s.logger.WithField("user_id", userID).

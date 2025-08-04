@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx"
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mixdone/uptime-monitoring/internal/models"
 	"github.com/mixdone/uptime-monitoring/internal/models/errs"
@@ -36,7 +36,7 @@ func (s *sessionRepository) CreateSession(ctx context.Context, session models.Se
 	return id, nil
 }
 
-func (s *sessionRepository) GetSession(ctx context.Context, userID int, refreshToken, fingerprint string) (*models.Session, error) {
+func (s *sessionRepository) GetSession(ctx context.Context, userID int64, refreshToken, fingerprint string) (*models.Session, error) {
 	var session models.Session
 
 	query := `
@@ -63,7 +63,7 @@ func (s *sessionRepository) GetSession(ctx context.Context, userID int, refreshT
 	return &session, nil
 }
 
-func (s *sessionRepository) GetAllUserSessions(ctx context.Context, userID int) ([]models.Session, error) {
+func (s *sessionRepository) GetAllUserSessions(ctx context.Context, userID int64) ([]models.Session, error) {
 	var sessions []models.Session
 
 	query := `
@@ -110,7 +110,7 @@ func (s *sessionRepository) DeleteSession(ctx context.Context, sessionID int64) 
 	return err
 }
 
-func (s *sessionRepository) DeleteAllSessions(ctx context.Context, userID int) error {
+func (s *sessionRepository) DeleteAllSessions(ctx context.Context, userID int64) error {
 	query := `
 		DELETE FROM sessions 
 		WHERE user_id = $1

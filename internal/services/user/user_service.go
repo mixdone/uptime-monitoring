@@ -2,9 +2,9 @@ package user
 
 import (
 	"context"
-	"errors"
 
 	"github.com/mixdone/uptime-monitoring/internal/models"
+	"github.com/mixdone/uptime-monitoring/internal/models/dto"
 	"github.com/mixdone/uptime-monitoring/internal/models/errs"
 	"github.com/mixdone/uptime-monitoring/internal/repository"
 	"github.com/mixdone/uptime-monitoring/pkg/logger"
@@ -37,7 +37,7 @@ func (s *userService) GetByUsername(ctx context.Context, username string) (*mode
 	return user, nil
 }
 
-func (s *userService) GetByID(ctx context.Context, userID int) (*models.User, error) {
+func (s *userService) GetByID(ctx context.Context, userID int64) (*models.User, error) {
 	s.logger.Debugf("Fetching user by ID: %d", userID)
 
 	user, err := s.repo.GetUser(ctx, userID)
@@ -51,42 +51,44 @@ func (s *userService) GetByID(ctx context.Context, userID int) (*models.User, er
 	return user, nil
 }
 
-func (s *userService) RegisterUser(ctx context.Context, username, password string) (int, error) {
-	s.logger.Infof("Attempting to register user: %s", username)
+func (s *userService) RegisterUser(ctx context.Context, userDTO dto.RegisterRequest) (int64, error) {
+	s.logger.Infof("Attempting to register user: %s", userDTO.Username)
 
-	_, err := s.repo.GetUserByUsername(ctx, username)
+	_, err := s.repo.GetUserByUsername(ctx, userDTO.Username)
 	if err == nil {
-		s.logger.Warnf("Username already taken: %s", username)
+		s.logger.Warnf("Username already taken: %s", userDTO.Username)
 		return 0, errs.ErrUsernameTaken
 	}
 
-	if !errors.Is(err, errs.ErrUserNotFound) {
+	if err != errs.ErrUserNotFound {
 		s.logger.WithError(err).Error("Unexpected error while checking username")
 		return 0, errs.ErrInternal
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(userDTO.Password), bcrypt.DefaultCost)
 	if err != nil {
-		s.logger.WithField("username", username).
+		s.logger.WithField("username", userDTO.Username).
 			WithError(err).
 			Error("Failed to hash password")
 		return 0, errs.ErrHashingFailed
 	}
 
 	user := models.User{
-		Username:     username,
+		Username:     userDTO.Username,
+		TelegramID:   userDTO.TelegramID,
+		Email:        userDTO.Email,
 		PasswordHash: string(hash),
 	}
 
 	id, err := s.repo.CreateUser(ctx, user)
 	if err != nil {
-		s.logger.WithField("username", username).
+		s.logger.WithField("username", user.Username).
 			WithError(err).
 			Error("Failed to create user in DB")
 		return 0, err
 	}
 
-	s.logger.Infof("User registered successfully: %s (id=%d)", username, id)
+	s.logger.Infof("User registered successfully: %s (id=%d)", user.Username, id)
 	return id, nil
 }
 
@@ -99,7 +101,7 @@ func (s *userService) VerifyPassword(hashFromDB, inputPassword string) bool {
 	return true
 }
 
-func (s *userService) DeleteUser(ctx context.Context, userID int) error {
+func (s *userService) DeleteUser(ctx context.Context, userID int64) error {
 	s.logger.Infof("Deleting user: id=%d", userID)
 
 	if err := s.repo.DeleteUser(ctx, userID); err != nil {

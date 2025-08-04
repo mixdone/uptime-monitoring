@@ -2,7 +2,7 @@ db:
   host: "db"
   port: "5432"
   user: "postgres"
-  dbname: "demo"
+  dbname: "postgres"
   sslmode: "disable"
 
 log:

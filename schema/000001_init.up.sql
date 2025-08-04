@@ -1,5 +1,5 @@
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     username VARCHAR(200) NOT NULL UNIQUE,
     email VARCHAR(200) UNIQUE,
     telegram_id BIGINT UNIQUE,
@@ -7,9 +7,10 @@ CREATE TABLE users (
 );
 
 CREATE TABLE sessions (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users (id) ON DELETE CASCADE NOT NULL,
     refresh_token TEXT NOT NULL,
+    expires_at DATE NOT NULL,
     fingerprint VARCHAR(256) NOT NULL,
     UNIQUE (user_id, fingerprint)
 );

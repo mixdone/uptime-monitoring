@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/mixdone/uptime-monitoring/internal/models/errs"
 )
 
 type tokenService struct {
@@ -15,7 +16,7 @@ type tokenService struct {
 }
 
 type Claims struct {
-	UserID int `json:"user_id"`
+	UserID int64 `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
@@ -28,7 +29,7 @@ func NewTokenService(accessSecret, refreshSecret string, accessTTL, refreshTTL t
 	}
 }
 
-func (t *tokenService) Generate(userID int) (accessToken, refreshToken string, err error) {
+func (t *tokenService) Generate(userID int64) (accessToken, refreshToken string, err error) {
 	now := time.Now()
 
 	accessClaims := &Claims{
@@ -62,7 +63,7 @@ func (t *tokenService) Generate(userID int) (accessToken, refreshToken string, e
 	return accessToken, refreshToken, nil
 }
 
-func (t *tokenService) ValidateAccess(tokenStr string) (userID int, err error) {
+func (t *tokenService) ValidateAccess(tokenStr string) (userID int64, err error) {
 	claims, err := t.parseToken(tokenStr, t.accessSecret)
 	if err != nil {
 		return 0, err
@@ -70,7 +71,7 @@ func (t *tokenService) ValidateAccess(tokenStr string) (userID int, err error) {
 	return claims.UserID, nil
 }
 
-func (t *tokenService) ValidateRefresh(tokenStr string) (userID int, err error) {
+func (t *tokenService) ValidateRefresh(tokenStr string) (userID int64, err error) {
 	claims, err := t.parseToken(tokenStr, t.refreshSecret)
 	if err != nil {
 		return 0, err
@@ -81,18 +82,21 @@ func (t *tokenService) ValidateRefresh(tokenStr string) (userID int, err error) 
 func (t *tokenService) parseToken(tokenStr string, secret []byte) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid signing method")
+			return nil, errs.ErrTokenWrongFormat
 		}
 		return secret, nil
 	})
 
 	if err != nil {
-		return nil, err
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, errs.ErrTokenExpired
+		}
+		return nil, errs.ErrTokenInvalid
 	}
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
-		return nil, errors.New("invalid token")
+		return nil, errs.ErrTokenInvalid
 	}
 
 	return claims, nil

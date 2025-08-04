@@ -25,7 +25,7 @@ type Config struct {
 
 	Server struct {
 		Host string `mapstructure:"host"`
-		Port int    `mapstructure:"port"`
+		Port string `mapstructure:"port"`
 	} `mapstructure:"server"`
 
 	Jwt struct {

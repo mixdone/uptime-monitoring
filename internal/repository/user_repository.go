@@ -3,8 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 
-	"github.com/jackc/pgx"
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mixdone/uptime-monitoring/internal/models"
 	"github.com/mixdone/uptime-monitoring/internal/models/errs"
@@ -18,8 +19,8 @@ func NewUserRepo(pool *pgxpool.Pool) UserRepository {
 	return &userRepo{db: pool}
 }
 
-func (u *userRepo) CreateUser(ctx context.Context, user models.User) (int, error) {
-	var id int
+func (u *userRepo) CreateUser(ctx context.Context, user models.User) (int64, error) {
+	var id int64
 	query := `
 		INSERT INTO users (username, email, telegram_id, password_hash)
 		VALUES ($1, $2, $3, $4)
@@ -36,7 +37,7 @@ func (u *userRepo) CreateUser(ctx context.Context, user models.User) (int, error
 	return id, nil
 }
 
-func (u *userRepo) GetUser(ctx context.Context, userId int) (*models.User, error) {
+func (u *userRepo) GetUser(ctx context.Context, userId int64) (*models.User, error) {
 	var user models.User
 	query := `
 		SELECT id, username, email, telegram_id, password_hash 
@@ -78,6 +79,7 @@ func (u *userRepo) GetUserByUsername(ctx context.Context, username string) (*mod
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			fmt.Println("пользователь не найден")
 			return nil, errs.ErrUserNotFound
 		}
 		return nil, err
@@ -86,7 +88,7 @@ func (u *userRepo) GetUserByUsername(ctx context.Context, username string) (*mod
 	return &user, nil
 }
 
-func (u *userRepo) DeleteUser(ctx context.Context, userId int) error {
+func (u *userRepo) DeleteUser(ctx context.Context, userId int64) error {
 	query := `
 		DELETE FROM users 
 		WHERE id = $1 

@@ -8,19 +8,19 @@ import (
 )
 
 type UserRepository interface {
-	CreateUser(ctx context.Context, user models.User) (int, error)
-	GetUser(ctx context.Context, userId int) (*models.User, error)
+	CreateUser(ctx context.Context, user models.User) (int64, error)
+	GetUser(ctx context.Context, userId int64) (*models.User, error)
 	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
 	//UpdateUser(ctx context.Context, user models.User) error
-	DeleteUser(ctx context.Context, userId int) error
+	DeleteUser(ctx context.Context, userId int64) error
 }
 
 type SessionRepository interface {
 	CreateSession(ctx context.Context, session models.Session) (int64, error)
-	GetSession(ctx context.Context, userID int, refreshToken, fingerprint string) (*models.Session, error)
-	GetAllUserSessions(ctx context.Context, userID int) ([]models.Session, error)
+	GetSession(ctx context.Context, userID int64, refreshToken, fingerprint string) (*models.Session, error)
+	GetAllUserSessions(ctx context.Context, userID int64) ([]models.Session, error)
 	DeleteSession(ctx context.Context, sessionID int64) error
-	DeleteAllSessions(ctx context.Context, userID int) error
+	DeleteAllSessions(ctx context.Context, userID int64) error
 }
 
 type Repository struct {
