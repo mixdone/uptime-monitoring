@@ -20,7 +20,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func NewTokenService(accessSecret, refreshSecret string, accessTTL, refreshTTL time.Duration) *tokenService {
+func NewTokenService(accessSecret, refreshSecret string, accessTTL, refreshTTL time.Duration) TokenService {
 	return &tokenService{
 		accessSecret:  []byte(accessSecret),
 		refreshSecret: []byte(refreshSecret),

@@ -16,7 +16,7 @@ type userService struct {
 	logger logger.Logger
 }
 
-func NewUserService(repo repository.UserRepository, log logger.Logger) *userService {
+func NewUserService(repo repository.UserRepository, log logger.Logger) UserService {
 	return &userService{
 		repo:   repo,
 		logger: log.WithField("component", "userService"),

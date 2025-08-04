@@ -5,7 +5,6 @@ import (
 	"github.com/mixdone/uptime-monitoring/internal/repository"
 	"github.com/mixdone/uptime-monitoring/internal/services/auth"
 	"github.com/mixdone/uptime-monitoring/internal/services/constants"
-	"github.com/mixdone/uptime-monitoring/internal/services/interfaces"
 	"github.com/mixdone/uptime-monitoring/internal/services/session"
 	"github.com/mixdone/uptime-monitoring/internal/services/token"
 	"github.com/mixdone/uptime-monitoring/internal/services/user"
@@ -13,10 +12,10 @@ import (
 )
 
 type Services struct {
-	User    interfaces.UserService
-	Token   interfaces.TokenService
-	Session interfaces.SessionService
-	Auth    interfaces.AuthenticationService
+	User    user.UserService
+	Token   token.TokenService
+	Session session.SessionService
+	Auth    auth.AuthenticationService
 }
 
 func NewServices(repositories *repository.Repository, cfg config.Config, log logger.Logger) *Services {

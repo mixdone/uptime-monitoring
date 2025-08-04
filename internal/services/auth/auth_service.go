@@ -8,18 +8,20 @@ import (
 	"github.com/mixdone/uptime-monitoring/internal/models/dto"
 	"github.com/mixdone/uptime-monitoring/internal/models/errs"
 	"github.com/mixdone/uptime-monitoring/internal/services/constants"
-	"github.com/mixdone/uptime-monitoring/internal/services/interfaces"
+	"github.com/mixdone/uptime-monitoring/internal/services/session"
+	"github.com/mixdone/uptime-monitoring/internal/services/token"
+	"github.com/mixdone/uptime-monitoring/internal/services/user"
 	"github.com/mixdone/uptime-monitoring/pkg/logger"
 )
 
 type authService struct {
 	logger  logger.Logger
-	user    interfaces.UserService
-	session interfaces.SessionService
-	token   interfaces.TokenService
+	user    user.UserService
+	session session.SessionService
+	token   token.TokenService
 }
 
-func NewAuthService(user interfaces.UserService, session interfaces.SessionService, token interfaces.TokenService, log logger.Logger) interfaces.AuthenticationService {
+func NewAuthService(user user.UserService, session session.SessionService, token token.TokenService, log logger.Logger) AuthenticationService {
 	return &authService{
 		logger:  log,
 		user:    user,
