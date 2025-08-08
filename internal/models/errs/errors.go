@@ -13,4 +13,6 @@ var (
 	ErrHashingFailed   = errors.New("failed to hash password")
 
 	ErrInternal = errors.New("internal error")
+
+	ErrNotFound = errors.New("resource not found ")
 )

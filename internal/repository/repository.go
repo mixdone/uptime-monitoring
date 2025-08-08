@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mixdone/uptime-monitoring/internal/models"
@@ -23,14 +24,26 @@ type SessionRepository interface {
 	DeleteAllSessions(ctx context.Context, userID int64) error
 }
 
+type MonitorsRepository interface {
+	CreateMonitor(ctx context.Context, monitor models.Monitor) (int64, error)
+	GetMonitor(ctx context.Context, id int64) (*models.Monitor, error)
+	GetAllUserMonitors(ctx context.Context, userID int64) ([]models.Monitor, error)
+	GetAllActiveMonitors(ctx context.Context) ([]models.Monitor, error)
+	UpdateMonitor(ctx context.Context, monitor models.Monitor) error
+	UpdateLastCheckedAt(ctx context.Context, id int64, checkedAt time.Time) error
+	DeleteMonitor(ctx context.Context, id int64) error
+}
+
 type Repository struct {
 	Users    UserRepository
 	Sessions SessionRepository
+	Monitors MonitorsRepository
 }
 
 func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{
 		Users:    NewUserRepo(db),
 		Sessions: NewSessionRepo(db),
+		Monitors: NewMonitorRepo(db),
 	}
 }

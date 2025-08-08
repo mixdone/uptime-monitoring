@@ -34,5 +34,14 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		auth.POST("/logout", h.authMiddleware, h.logout)
 	}
 
+	monitor := router.Group("/monitors", h.authMiddleware)
+	{
+		monitor.POST("", h.createMonitor)
+		monitor.GET("", h.getAllUserMonitor)
+		monitor.GET("/:id", h.getMonitor)
+		monitor.PUT("/:id", h.updateMonitor)
+		monitor.DELETE("/:id", h.deleteMonitor)
+	}
+
 	return router
 }
