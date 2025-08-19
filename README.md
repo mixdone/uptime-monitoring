@@ -10,17 +10,17 @@
   - Проверка HTTP-ответов по статусу и содержимому
 
 ## Использование
-```
+```bash
 git clone <repo>
 cd <repo>
 docker compose up 
 ```
 Если не выполняются миграции, можно повторить команду 
-```
+```bash
 docker compose up 
 ```
 или выполнить по шагам
-```
+```bash
 docker compose up db -d
 docker compose run migrate
 docker compose up backend
@@ -28,7 +28,7 @@ docker compose up backend
 
 ### Конфигурация
 Конфигурация хранится в configs/config.yml:
-```
+```yaml
 db:
   host: "db"
   port: "5432"
@@ -48,7 +48,7 @@ server:
 
 ##### Создание HTTP-монитора
 POST /monitors
-```
+```json
 {
   "name": "Google Homepage Monitor",
   "type": "http",
