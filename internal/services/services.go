@@ -10,6 +10,7 @@ import (
 	"github.com/mixdone/uptime-monitoring/internal/services/token"
 	"github.com/mixdone/uptime-monitoring/internal/services/user"
 	"github.com/mixdone/uptime-monitoring/pkg/logger"
+	"github.com/mixdone/uptime-monitoring/pkg/message"
 )
 
 type Services struct {
@@ -18,14 +19,20 @@ type Services struct {
 	Session session.SessionService
 	Auth    auth.AuthenticationService
 	Monitor monitors.MonitorService
+	Worker  monitors.Worker
+	Manager monitors.Manager
 }
 
-func NewServices(repositories *repository.Repository, cfg config.Config, log logger.Logger) *Services {
+func NewServices(repositories *repository.Repository, cfg config.Config, mq message.MQ, log logger.Logger) *Services {
 	user := user.NewUserService(repositories.Users, log)
-	token := token.NewTokenService(cfg.Jwt.AccessSecret, cfg.Jwt.RefreshSecret, constants.AccessTokenTTL, constants.RefreshTokenTTL)
+	token := token.NewTokenService(cfg.Jwt.AccessSecret, cfg.Jwt.RefreshSecret,
+		constants.AccessTokenTTL, constants.RefreshTokenTTL)
 	session := session.NewSessionService(repositories.Sessions, log)
 	auth := auth.NewAuthService(user, session, token, log)
-	monitor := monitors.NewMonitorService(repositories.Monitors, log)
+
+	worker := monitors.NewWorker(mq, log)
+	manager := monitors.NewManager(mq, log, repositories.Monitors)
+	monitor := monitors.NewMonitorService(repositories.Monitors, log, manager)
 
 	return &Services{
 		User:    user,
@@ -33,5 +40,7 @@ func NewServices(repositories *repository.Repository, cfg config.Config, log log
 		Session: session,
 		Auth:    auth,
 		Monitor: monitor,
+		Worker:  worker,
+		Manager: manager,
 	}
 }

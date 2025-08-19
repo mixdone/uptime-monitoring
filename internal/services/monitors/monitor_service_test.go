@@ -34,7 +34,7 @@ func setup(t *testing.T) (context.Context, *gomock.Controller, *mocks.MockMonito
 	mockLogger.EXPECT().Debug(gomock.Any()).AnyTimes()
 	mockLogger.EXPECT().Error(gomock.Any()).AnyTimes()
 
-	svc := monitors.NewMonitorService(mockRepo, mockLogger)
+	svc := monitors.NewMonitorService(mockRepo, mockLogger, nil)
 	return context.Background(), ctrl, mockRepo, mockLogger, svc
 }
 

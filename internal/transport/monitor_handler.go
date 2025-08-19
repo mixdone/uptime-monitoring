@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -11,6 +12,7 @@ import (
 
 // @Summary Create a new monitor
 // @Tags monitors
+// @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param monitor body dto.MonitorRequest true "monitor create request"
@@ -33,6 +35,9 @@ func (h *Handler) createMonitor(c *gin.Context) {
 		return
 	}
 
+	reqJSON, _ := json.Marshal(req.RequestSpec)
+	expectedJSON, _ := json.Marshal(req.ExpectedResponse)
+
 	monitor := models.Monitor{
 		UserID:           userID.(int64),
 		Name:             req.Name,
@@ -41,8 +46,8 @@ func (h *Handler) createMonitor(c *gin.Context) {
 		Timeout:          req.Timeout,
 		Interval:         req.Interval,
 		IsActive:         req.IsActive,
-		RequestSpec:      req.RequestSpec,
-		ExpectedResponse: req.ExpectedResponse,
+		RequestSpec:      reqJSON,
+		ExpectedResponse: expectedJSON,
 	}
 
 	id, err := h.services.Monitor.CreateMonitor(c.Request.Context(), monitor)
@@ -58,6 +63,7 @@ func (h *Handler) createMonitor(c *gin.Context) {
 
 // @Summary Get monitor by ID
 // @Tags monitors
+// @Security ApiKeyAuth
 // @Produce json
 // @Param id path int true "Monitor ID"
 // @Success 200 {object} models.Monitor
@@ -82,6 +88,7 @@ func (h *Handler) getMonitor(c *gin.Context) {
 
 // @Summary Get all user's monitors
 // @Tags monitors
+// @Security ApiKeyAuth
 // @Produce json
 // @Success 200 {object} []models.Monitor
 // @Failure 401 {object} map[string]string
@@ -107,6 +114,7 @@ func (h *Handler) getAllUserMonitor(c *gin.Context) {
 
 // @Summary Update monitor
 // @Tags monitors
+// @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "Monitor ID"
@@ -135,6 +143,9 @@ func (h *Handler) updateMonitor(c *gin.Context) {
 		return
 	}
 
+	reqJSON, _ := json.Marshal(req.RequestSpec)
+	expectedJSON, _ := json.Marshal(req.ExpectedResponse)
+
 	monitor := models.Monitor{
 		ID:               id,
 		UserID:           userID.(int64),
@@ -144,8 +155,8 @@ func (h *Handler) updateMonitor(c *gin.Context) {
 		Timeout:          req.Timeout,
 		Interval:         req.Interval,
 		IsActive:         req.IsActive,
-		RequestSpec:      req.RequestSpec,
-		ExpectedResponse: req.ExpectedResponse,
+		RequestSpec:      reqJSON,
+		ExpectedResponse: expectedJSON,
 	}
 
 	if err := h.services.Monitor.UpdateMonitor(c.Request.Context(), monitor); err != nil {
@@ -160,6 +171,7 @@ func (h *Handler) updateMonitor(c *gin.Context) {
 
 // @Summary Delete monitor
 // @Tags monitors
+// @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "Monitor ID"

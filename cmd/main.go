@@ -12,9 +12,13 @@ import (
 	"github.com/mixdone/uptime-monitoring/internal/models"
 	"github.com/mixdone/uptime-monitoring/internal/repository"
 	"github.com/mixdone/uptime-monitoring/internal/services"
+	"github.com/mixdone/uptime-monitoring/internal/services/monitors"
 	"github.com/mixdone/uptime-monitoring/internal/transport"
 	"github.com/mixdone/uptime-monitoring/pkg/logger"
+	"github.com/mixdone/uptime-monitoring/pkg/message"
 )
+
+const magic = 3
 
 // @title Uptime Monitoring API
 // @version 1.0
@@ -47,11 +51,16 @@ func main() {
 
 	log.Info("Connected to PostgreSQL")
 
-	repository := repository.NewRepository(db)
-	services := services.NewServices(repository, *cfg, log)
-	handlers := transport.NewHandler(services, log)
+	mq := message.NewLocalMQ(log)
+
+	repo := repository.NewRepository(db)
+	svc := services.NewServices(repo, *cfg, mq, log)
+	handlers := transport.NewHandler(svc, log)
 
 	srv := new(models.ServerApi)
+
+	rootCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	go func() {
 		if err := srv.Run(cfg.Server.Host, cfg.Server.Port, handlers.InitRoutes()); err != nil {
@@ -59,14 +68,22 @@ func main() {
 		}
 	}()
 
+	go svc.Manager.Run(rootCtx)
+	go svc.Manager.StartResultHandler(rootCtx)
+
+	for range magic {
+		go svc.Worker.Run(rootCtx, string(monitors.MonitorHTTP))
+	}
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+	cancel()
 
 	log.Info("Shutdown signal received")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
+	ctx, shutdownCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer shutdownCancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
 		log.WithError(err).Error("Server shutdown failed")

@@ -14,5 +14,7 @@ var (
 
 	ErrInternal = errors.New("internal error")
 
-	ErrNotFound = errors.New("resource not found ")
+	ErrNotFound = errors.New("resource not found")
+
+	ErrWrongType = errors.New("wrong monitoring type")
 )

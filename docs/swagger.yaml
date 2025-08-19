@@ -30,6 +30,37 @@ definitions:
     - fingerprint
     - refresh_token
     type: object
+  dto.MonitorRequest:
+    properties:
+      expected_response: {}
+      interval:
+        minimum: 0
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      request_spec: {}
+      target:
+        type: string
+      timeout:
+        minimum: 0
+        type: integer
+      type:
+        type: string
+    required:
+    - interval
+    - name
+    - request_spec
+    - target
+    - timeout
+    - type
+    type: object
+  dto.MonitorResponse:
+    properties:
+      id:
+        type: integer
+    type: object
   dto.RefreshRequest:
     properties:
       fingerprint:
@@ -59,6 +90,27 @@ definitions:
     - fingerprint
     - password
     - username
+    type: object
+  models.Monitor:
+    properties:
+      id:
+        type: integer
+      interval:
+        type: integer
+      is_active:
+        type: boolean
+      last_checked_at:
+        type: string
+      name:
+        type: string
+      target:
+        type: string
+      timeout:
+        type: integer
+      type:
+        type: string
+      user_id:
+        type: integer
     type: object
 host: localhost:8080
 info:
@@ -202,6 +254,186 @@ paths:
       summary: Register user
       tags:
       - auth
+  /monitors:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Monitor'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get all user's monitors
+      tags:
+      - monitors
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: monitor create request
+        in: body
+        name: monitor
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MonitorRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MonitorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new monitor
+      tags:
+      - monitors
+  /monitors/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Monitor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Delete monitor
+      tags:
+      - monitors
+    get:
+      parameters:
+      - description: Monitor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Monitor'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get monitor by ID
+      tags:
+      - monitors
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Monitor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: monitor update request
+        in: body
+        name: monitor
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MonitorRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Update monitor
+      tags:
+      - monitors
 securityDefinitions:
   ApiKeyAuth:
     description: 'Введите токен в формате: Bearer <your-token>'

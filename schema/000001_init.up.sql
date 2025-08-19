@@ -25,7 +25,7 @@ CREATE TABLE monitors (
     timeout INT NOT NULL DEFAULT 10 CHECK (timeout BETWEEN 1 AND 300),
     interval INT NOT NULL DEFAULT 60 CHECK (interval BETWEEN 10 AND 3600),
     is_active BOOLEAN NOT NULL DEFAULT true,
-    last_checked_at TIMESTAMPTZ,
+    last_checked_at TIMESTAMPTZ
 ); 
 
 

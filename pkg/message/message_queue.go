@@ -63,7 +63,9 @@ func (mq *localMQ) Consume(ctx context.Context, queue string, handler func([]byt
 					return
 				}
 				err = handler(msg)
-				mq.log.Error(err)
+				if err != nil {
+					mq.log.Error(err)
+				}
 			case <-ctx.Done():
 				return
 			}

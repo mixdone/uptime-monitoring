@@ -72,7 +72,7 @@ func (r *monitorRepo) GetMonitor(ctx context.Context, id int64) (*models.Monitor
 			s.request, s.expected_response
 		FROM monitors m
 		JOIN monitor_specs s ON m.id = s.monitor_id
-		WHERE id = $1
+		WHERE m.id = $1
 	`
 
 	var monitor models.Monitor
@@ -94,6 +94,7 @@ func (r *monitorRepo) GetMonitor(ctx context.Context, id int64) (*models.Monitor
 
 	return &monitor, nil
 }
+
 func (r *monitorRepo) GetAllUserMonitors(ctx context.Context, userID int64) ([]models.Monitor, error) {
 
 	query := ` 
@@ -143,7 +144,7 @@ func (r *monitorRepo) GetAllActiveMonitors(ctx context.Context) ([]models.Monito
 			s.request, s.expected_response
 		FROM monitors m
 		JOIN monitor_specs s ON m.id = s.monitor_id
-		WHERE is_actuve = true 
+		WHERE m.is_active = true 
 	`
 
 	rows, err := r.db.Query(ctx, query)

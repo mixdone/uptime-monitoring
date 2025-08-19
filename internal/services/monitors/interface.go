@@ -16,3 +16,14 @@ type MonitorService interface {
 	UpdateLastCheckedAt(ctx context.Context, id int64, checkedAt time.Time) error
 	DeleteMonitor(ctx context.Context, id int64) error
 }
+
+type Worker interface {
+	Run(ctx context.Context, monitorType string)
+}
+
+type Manager interface {
+	Run(ctx context.Context)
+	AddTask(t *ScheduledTask)
+	DequeueTask(id int64)
+	StartResultHandler(ctx context.Context)
+}

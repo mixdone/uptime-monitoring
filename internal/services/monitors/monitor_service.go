@@ -10,14 +10,16 @@ import (
 )
 
 type monitorService struct {
-	repo   repository.MonitorsRepository
-	logger logger.Logger
+	repo    repository.MonitorsRepository
+	logger  logger.Logger
+	manager Manager
 }
 
-func NewMonitorService(repo repository.MonitorsRepository, log logger.Logger) MonitorService {
+func NewMonitorService(repo repository.MonitorsRepository, log logger.Logger, manager Manager) MonitorService {
 	return &monitorService{
-		repo:   repo,
-		logger: log.WithField("component", "monitorService"),
+		repo:    repo,
+		logger:  log.WithField("component", "monitorService"),
+		manager: manager,
 	}
 }
 
@@ -31,6 +33,15 @@ func (s *monitorService) CreateMonitor(ctx context.Context, monitor models.Monit
 			"monitorName": monitor.Name,
 		}).WithError(err).Error("Failed to create monitor")
 		return 0, err
+	}
+
+	if monitor.IsActive {
+		s.manager.AddTask(&ScheduledTask{
+			MonitorID:   id,
+			Kind:        MonitorType(monitor.Type),
+			NextCheckAt: time.Now(),
+			Interval:    time.Duration(monitor.Interval),
+		})
 	}
 
 	s.logger.Infof("Monitor created successfully with id=%d", id)
@@ -87,6 +98,17 @@ func (s *monitorService) UpdateMonitor(ctx context.Context, monitor models.Monit
 		return err
 	}
 
+	if !monitor.IsActive {
+		s.manager.DequeueTask(monitor.ID)
+	} else {
+		s.manager.AddTask(&ScheduledTask{
+			MonitorID:   monitor.ID,
+			Kind:        MonitorType(monitor.Type),
+			NextCheckAt: time.Now(),
+			Interval:    time.Duration(monitor.Interval),
+		})
+	}
+
 	s.logger.Infof("Monitor updated successfully id=%d", monitor.ID)
 	return nil
 }
@@ -114,6 +136,8 @@ func (s *monitorService) DeleteMonitor(ctx context.Context, id int64) error {
 		}).WithError(err).Error("Failed to delete monitor")
 		return err
 	}
+
+	s.manager.DequeueTask(id)
 
 	s.logger.Infof("Monitor deleted successfully id=%d", id)
 	return nil
