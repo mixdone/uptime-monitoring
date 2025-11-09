@@ -1,20 +1,24 @@
 pipeline {
     agent { 
-	docker {
-	    image 'golang:1.24'
-	}
+        docker {
+            image 'golang:1.24'
+        }
     }	
 
+    environment {
+        GOCACHE = '/tmp/go-build-cache'
+    }
+
     stages {
-	stage(build) {
-	    steps {
-	    	sh 'go build -o maim cmd/main.go'
-            }
-	}
-        stage('Test') {
+        stage(build) {
             steps {
-                sh 'go test'
+                sh 'go build -o main cmd/main.go'
+                }
+        }
+            stage('Test') {
+                steps {
+                    sh 'go test ./...'
+                }
             }
         }
-    }
 }

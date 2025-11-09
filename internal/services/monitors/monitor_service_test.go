@@ -39,57 +39,59 @@ func setup(t *testing.T) (context.Context, *gomock.Controller, *mocks.MockMonito
 }
 
 func TestCreateMonitor_Success(t *testing.T) {
-	tests := []struct {
-		name     string
-		monitor  models.Monitor
-		returnID int64
-	}{
-		{
-			name: "basic monitor",
-			monitor: models.Monitor{
-				UserID:   1,
-				Name:     "Basic Monitor",
-				Type:     "http",
-				Target:   "https://example.com",
-				Timeout:  5,
-				Interval: 60,
-				IsActive: true,
-			},
-			returnID: expectedID,
-		},
-		{
-			name: "monitor with JSON specs",
-			monitor: models.Monitor{
-				UserID:           2,
-				Name:             "With JSON",
-				Type:             "http",
-				Target:           "https://example.org",
-				Timeout:          10,
-				Interval:         30,
-				IsActive:         true,
-				RequestSpec:      json.RawMessage(`{"method":"GET"}`),
-				ExpectedResponse: json.RawMessage(`{"status":200}`),
-			},
-			returnID: expectedID,
-		},
-	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ctx, ctrl, mockRepo, _, svc := setup(t)
-			defer ctrl.Finish()
+    tests := []struct {
+        name     string
+        monitor  models.Monitor
+        returnID int64
+    }{
+        {
+            name: "basic monitor",
+            monitor: models.Monitor{
+                UserID:   1,
+                Name:     "Basic Monitor",
+                Type:     "http",
+                Target:   "https://example.com",
+                Timeout:  5,
+                Interval: 60,
+                IsActive: false,
+            },
+            returnID: expectedID,
+        },
+        {
+            name: "monitor with JSON specs",
+            monitor: models.Monitor{
+                UserID:           2,
+                Name:             "With JSON",
+                Type:             "http",
+                Target:           "https://example.org",
+                Timeout:          10,
+                Interval:         30,
+                IsActive:         false,
+                RequestSpec:      json.RawMessage(`{"method":"GET"}`),
+                ExpectedResponse: json.RawMessage(`{"status":200}`),
+            },
+            returnID: expectedID,
+        },
+    }
 
-			mockRepo.EXPECT().
-				CreateMonitor(ctx, test.monitor).
-				Return(expectedID, nil).
-				Times(1)
+    for _, test := range tests {
+        t.Run(test.name, func(t *testing.T) {
+            ctx, ctrl, mockRepo, _, svc := setup(t)
+            defer ctrl.Finish()
 
-			id, err := svc.CreateMonitor(ctx, test.monitor)
-			assert.NoError(t, err)
-			assert.Equal(t, expectedID, id)
-		})
-	}
+            mockRepo.EXPECT().
+                CreateMonitor(ctx, test.monitor).
+                Return(test.returnID, nil).
+                Times(1)
+
+            id, err := svc.CreateMonitor(ctx, test.monitor)
+            assert.NoError(t, err)
+            assert.Equal(t, test.returnID, id)
+        })
+    }
 }
+
 
 func TestGetMonitor_Success(t *testing.T) {
 	tests := []struct {
